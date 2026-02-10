@@ -8,5 +8,3 @@ langchain-huggingface
 langgraph
 typing-extensions
 pydantic>=2.0
-model-context-protocol>=0.3.0
-a2a-sdk>=0.1.0

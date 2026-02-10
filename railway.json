@@ -1,0 +1,11 @@
+{
+  "builds": [
+    {
+      "src": "./",
+      "use": "docker"
+    }
+  ],
+  "deploy": {
+    "startCommand": "python a2a_wrapper_hr_policy_agent.py"
+  }
+}
