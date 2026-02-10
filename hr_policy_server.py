@@ -1,16 +1,18 @@
 import os
+import json
 from dotenv import load_dotenv
-from fastmcp import FastMCP
+from fastapi import FastAPI
+from pydantic import BaseModel
 
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_huggingface import HuggingFaceEmbeddings
 
 # -----------------------------------------------------------------------
-# Setup the MCP Server
+# Setup the FastAPI Server
 # -----------------------------------------------------------------------
 load_dotenv()
-hr_policies_mcp = FastMCP("HR-Policies-MCP-Server")
+app = FastAPI(title="HR-Policies-MCP-Server")
 
 # -----------------------------------------------------------------------
 # Setup the Vector Store for use in retrieving policies
@@ -22,43 +24,47 @@ pdf_full_path = os.path.abspath(os.path.join(
     os.path.dirname(__file__), pdf_filename))
 
 # Load and split the PDF document
-loader = PyPDFLoader(pdf_full_path)
-policy_documents = loader.load_and_split()
-
-# Create embeddings
-policy_embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-# Create In memory vector store
-policy_vector_store = InMemoryVectorStore.from_documents(
-    policy_documents, policy_embeddings)
-
-# -----------------------------------------------------------------------
-# Setup the MCP tool to query for policies, given a user query string
-# -----------------------------------------------------------------------
-
-@hr_policies_mcp.tool()
-def get_policy(query: str) -> str:
-    """Get relevant HR policy information based on a query"""
-    results = policy_vector_store.similarity_search(query, k=3)
-    return "\n".join([doc.page_content for doc in results])
-
-# -----------------------------------------------------------------------
-# Setup the MCP prompt for the LLM
-# -----------------------------------------------------------------------
-
-@hr_policies_mcp.prompt()
-def get_llm_prompt(query: str) -> str:
-    """Generate a prompt for the LLM to answer HR policy questions"""
-    return f"""You are an HR policy expert. Answer the following question about company HR policies based on the provided information.
+try:
+    loader = PyPDFLoader(pdf_full_path)
+    policy_documents = loader.load_and_split()
     
-Question: {query}
-
-Please provide a clear and concise answer."""
+    # Create embeddings
+    policy_embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2")
+    
+    # Create In memory vector store
+    policy_vector_store = InMemoryVectorStore.from_documents(
+        policy_documents, policy_embeddings)
+except Exception as e:
+    print(f"Error loading PDF: {e}")
+    policy_vector_store = None
 
 # -----------------------------------------------------------------------
-# Run the HR Policies MCP Server
+# Setup the API endpoints
+# -----------------------------------------------------------------------
+
+class PolicyQuery(BaseModel):
+    query: str
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "ok"}
+
+@app.post("/get_policy")
+async def get_policy(request: PolicyQuery):
+    """Get relevant HR policy information based on a query"""
+    if policy_vector_store is None:
+        return {"error": "Policy database not available"}
+    
+    results = policy_vector_store.similarity_search(request.query, k=3)
+    content = "\n".join([doc.page_content for doc in results])
+    return {"policy": content}
+
+# -----------------------------------------------------------------------
+# Run the HR Policies Server
 # -----------------------------------------------------------------------
 
 if __name__ == "__main__":
-    hr_policies_mcp.run(transport="stdio", log_level="debug")
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
