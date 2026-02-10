@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-dotenv
+langchain-cohere
+mcp
+langchain-core
+langchain-community
+langchain-huggingface
+langgraph
+typing-extensions
