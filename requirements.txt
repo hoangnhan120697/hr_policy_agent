@@ -2,9 +2,10 @@ fastapi
 uvicorn
 python-dotenv
 langchain-cohere
-mcp
+fastmcp
 langchain-core
 langchain-community
 langchain-huggingface
 langgraph
 typing-extensions
+langchain-mcp-adapters
