@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-dotenv
+langchain-cohere
+langchain-core
+langchain-community
+langchain-huggingface
+langgraph
+typing-extensions
+pydantic>=2.0
