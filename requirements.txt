@@ -9,3 +9,4 @@ langgraph
 typing-extensions
 pydantic>=2.0
 a2a
+a2a.server
