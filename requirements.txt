@@ -9,4 +9,4 @@ langgraph
 typing-extensions
 pydantic>=2.0
 a2a
-a2a.server
+a2a-sdk[http-server]==0.2.8
